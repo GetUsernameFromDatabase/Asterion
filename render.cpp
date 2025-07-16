@@ -1,8 +1,8 @@
-#include "game.h"
-#include "textures.h"
-#include "collision.h"
-#include "render.h"
-#include "isometric_calc.h"
+#include "game.hpp"
+#include "textures.hpp"
+#include "collision.hpp"
+#include "render.hpp"
+#include "isometric_calc.hpp"
 
 #include <iostream>
 #include <vector>
@@ -10,13 +10,13 @@
 #include <algorithm>
 #include <unordered_set>
 
-RenderQueueItem::RenderQueueItem(int z_index, SDL_Rect dstrect, Texture* texture) {
-    this->z_index = z_index;
+RenderQueueItem::RenderQueueItem(int render_order, SDL_Rect dstrect, Texture* texture) {
+    this->render_order = render_order;
     this->dstrect = dstrect;
     this->texture = texture;
 }
-RenderQueueItem::RenderQueueItem(int z_index, std::function<void(SDL_Renderer* renderer)> custom_render) {
-    this->z_index = z_index;
+RenderQueueItem::RenderQueueItem(int render_order, std::function<void(SDL_Renderer* renderer)> custom_render) {
+    this->render_order = render_order;
     this->custom_render = custom_render;
 }
 
@@ -145,19 +145,12 @@ void render_map(SDL_Renderer* renderer, struct Offset& offset, struct Player& pl
         }
     }
 
-    // NOTE: KUI VARA PLAYER V2LJA TULEB  - half_tile
-        // tuleks teha eraldi igale objektile, kus on see l2vend, et player on TOP
-    SDL_Rect player_int_rect = { static_cast<int>(player.rect.x),
-                                 static_cast<int>(player.rect.y),
-                                 static_cast<int>(player.rect.w),
-                                 static_cast<int>(player.rect.h)
-    };
-    
-    // TODO: look this over
-    render_queue.push_back(RenderQueueItem(player_int_rect.y, [&]() { load_player_sprite(renderer); }))
+    render_queue.push_back(
+        RenderQueueItem(static_cast<int>(player.rect.y), [](SDL_Renderer* renderer) { load_player_sprite(renderer); })
+    );
 
     std::sort(render_queue.begin(), render_queue.end(), [](const RenderQueueItem& a, const RenderQueueItem& b) {
-        return a.z_index < b.z_index;
+        return a.render_order < b.render_order;
         });
 
     // render things in queue
