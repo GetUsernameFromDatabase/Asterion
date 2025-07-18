@@ -31,7 +31,7 @@ Uint32 tick_timer = SDL_GetTicks();
 int render_radius = 20; // perfectse rad -> (win_width / 2) / tile_size //*NOTE win_widthil pole siin veel v22rtust vaid
 
 /* map.h args */
-int tile_size = 25;
+int tile_size = 100;
 
 /* pathfinding */
 int pathEndX = -1;
@@ -90,11 +90,13 @@ void react_to_keyboard_down(SDL_Keycode key, struct Player& player, struct Offse
     case SDLK_PERIOD: {
         tile_size += 5;
         std::cout << "tile_size = " << tile_size << "\n";
+        player.size = tile_size / 2;
         break;
     }
     case SDLK_COMMA: {
         tile_size > 5 ? tile_size -= 5 : tile_size;
         std::cout << "tile_size = " << tile_size << "\n";
+        player.size = tile_size / 2;
         break;
     }
     case SDLK_PAGEDOWN: {
@@ -111,6 +113,7 @@ void react_to_keyboard_down(SDL_Keycode key, struct Player& player, struct Offse
     }
     case SDLK_LSHIFT: {
         player.movement_speed = DEFAULT_PLAYER_MOVEMENT_SPEED / 4;
+        player.shifting = true;
         break;
     }
 
@@ -134,6 +137,7 @@ void react_to_keyboard_up(SDL_Keycode key, struct Player& player) {
     {
     case SDLK_LSHIFT: {
         player.movement_speed = DEFAULT_PLAYER_MOVEMENT_SPEED;
+        player.shifting = false;
         break;
     }
 
@@ -150,9 +154,27 @@ void react_to_keyboard_up(SDL_Keycode key, struct Player& player) {
 /// @param state is expected to be gotten from `SDL_GetKeyboardState(NULL)`
 /// @param player 
 void react_to_keyboard_state(const Uint8* state, struct Player& player) {
-    player.movement_vector = { 0, 0 };
-    if (state[SDL_SCANCODE_W]) { player.movement_vector.y -= 1; }
-    if (state[SDL_SCANCODE_S]) { player.movement_vector.y += 1; }
-    if (state[SDL_SCANCODE_A]) { player.movement_vector.x -= 1; }
-    if (state[SDL_SCANCODE_D]) { player.movement_vector.x += 1; }
+    SDL_FPoint dir = player.movement_vector;
+    // std::cout << "movement_vector: " << dir.x << ' ' << dir.y << " & of dir and pMovementVec " << &dir << " " << &player.movement_vector << '\n';
+    double slide_after_running = 0.08f;  // lower number = more sliding
+
+    if (state[SDL_SCANCODE_W]) { dir.y = -1; }
+    if (state[SDL_SCANCODE_S]) { dir.y =  1; }
+    if (state[SDL_SCANCODE_A]) { dir.x = -1; }
+    if (state[SDL_SCANCODE_D]) { dir.x =  1; }
+
+    // if player presses movement key then reset the sliding
+    if (abs(dir.x) == 1 || abs(dir.y) == 1) { 
+        if (!player.shifting) {player.movement_speed = DEFAULT_PLAYER_MOVEMENT_SPEED; } 
+        else { player.movement_speed = DEFAULT_PLAYER_MOVEMENT_SPEED / 4; } }
+
+    if (!state[SDL_SCANCODE_W] && !state[SDL_SCANCODE_S]) { 
+        std::abs(dir.y) > 0.1f ? dir.y -= slide_after_running * (dir.y / std::abs(dir.y)) : dir.y = 0.0f; 
+    }
+    
+    if (!state[SDL_SCANCODE_A] && !state[SDL_SCANCODE_D]) { 
+        std::abs(dir.x) > 0.1f ? dir.x -= slide_after_running * (dir.x / std::abs(dir.x)) : dir.x = 0.0f; 
+    }
+
+    player.movement_vector = { dir.x, dir.y};
 }

@@ -11,9 +11,12 @@ struct Player {
     float x;
     float y;
     SDL_FRect rect;
+    SDL_FRect rect_collision;  // rect, millega collisioni vaatab
     bool collision;
     std::vector<int> collision_array;
-    SDL_FPoint movement_vector;  // Will be used to calculate where player will end up at
+    SDL_FPoint movement_vector;  // Will be used to calculate where player will end up at, direction alike.
+    int animation_speed;
+    bool shifting;  // has player pressed shift?
 };
 
 extern Player player;

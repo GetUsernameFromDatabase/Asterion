@@ -54,8 +54,9 @@ int main(int argc, char* argv[]) {
                 SDL_Keycode key = event.key.keysym.sym;
                 react_to_keyboard_up(key, player);
             }
-            react_to_keyboard_state(state, player);
         }
+        
+        react_to_keyboard_state(state, player);  // movement vectori slow downimiseks on vaja seda funci alati callida 
 
         frame_count++;
 
@@ -70,9 +71,10 @@ int main(int argc, char* argv[]) {
             SDL_RenderClear(renderer);  // enne uut framei, t6mba plats puhtaks
 
             update_offset(offset, player, window);
-            update_player(map, offset, state, renderer);
-
+            
             load_render(renderer, offset, player);
+            update_player(map, offset, state, renderer);
+            
             // enne millegi renderimist, peab lisama rendererile colori.
             SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
             // dispay new frame
