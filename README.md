@@ -63,7 +63,8 @@ pacman -S --needed base-devel mingw-w64-ucrt-x86_64-toolchain
 > This will install them on the UCRT64 [environment](https://www.msys2.org/docs/environments/)
 
 Make sure to add them to your windows `PATH` environment variable
-> the path I added was `C:\tools\msys64\ucrt64\bin`
+> Paths added to user variables: `*\msys64\ucrt64\bin`
+>                                `*\msys64\usr\bin`
 
 ### Install SDL
 
@@ -95,14 +96,16 @@ The installation steps are:
 
 ### Building and running the project
 
-This project can be run by first building the project
+This project uses [make](https://www.gnu.org/software/make/manual/html_node/index.html#SEC_Contents) to build and run the project
+
+Simply run the following command to build and run the game
 
 ```bash
-g++ -Isrc/include -Lsrc/lib -o main.exe *.cpp -lSDL2 -lSDL2_image -lmingw32
+make
 ```
 
-Then running the resulting executable with
+---
 
-```bash
-main.exe
-```
+For Visual Studio Code it is reccomended to use the [MakeFile Tools](https://marketplace.visualstudio.com/items?itemName=ms-vscode.makefile-tools) extension
+
+Although that is not needed as running the project with `F5` will work just fine
