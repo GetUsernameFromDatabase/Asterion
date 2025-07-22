@@ -1,5 +1,7 @@
 #pragma once
 #include <vector>
+#include <set>
+#include <utility>
 
 /// @brief Enum for things used in the map generation and rendering
 ///
@@ -8,6 +10,7 @@ enum Map {
     PLAYER,
     LAND, // no texture
     TREE,
+    TREE_TRUNK,
     GROUND_CUBE,
     MAZE_GROUND_CUBE,
     YELLOW_CUBE,
@@ -26,11 +29,15 @@ enum Map {
     VINE_OVERHANG_SN,
     VINE_OVERHANG_EW,
     VINE_COVER_N,
+    VOID_CUBE,
+    VOID_CUBE_NEIGHBOUR,
+    GRASS_COVER,
+    INVISIBLE_CUBE,
 };
 
 
 /* map */
-const int map_size = 250;
+const int map_size = 325;
 extern int map[map_size][map_size];
 extern std::vector<std::pair<int, int>> maze_door_grids;
 
@@ -38,3 +45,4 @@ void generate_map();
 void print_map(int map[map_size][map_size]);
 void generate_random_map(int map[map_size][map_size], int min_val, int max_val);
 void generate_maze_runner_map(int map[map_size][map_size]);
+void generate_voids(std::set<std::pair<int,int>> void_locations, const int max_voids);
