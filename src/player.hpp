@@ -3,7 +3,7 @@
 #include "map.hpp"
 #include <vector>
 
-static const float DEFAULT_PLAYER_MOVEMENT_SPEED = 20.0f;
+static const float DEFAULT_PLAYER_MOVEMENT_SPEED = 50.0f;
 
 struct Player {
     float movement_speed;
@@ -11,7 +11,6 @@ struct Player {
     float x;
     float y;
     SDL_FRect rect;
-    SDL_FRect rect_collision;  // rect, millega collisioni vaatab
     bool collision;
     std::vector<int> collision_array;
     SDL_FPoint movement_vector;  // Will be used to calculate where player will end up at, direction alike.

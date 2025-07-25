@@ -1,6 +1,7 @@
 #include "game.hpp"
 #include "textures.hpp"
 #include "assets.hpp"
+#include "render.hpp"
 
 #include <vector>
 #include <iostream>
@@ -48,6 +49,7 @@ void load_textures(SDL_Renderer* renderer) {
     texture_map[Map::TREE_TRUNK] = ImageTexture(renderer, Assets::Images::tree_trunk);
     // notused = ImageTexture(renderer, "resources/snowy_tree.png");
     texture_map[Map::GROUND_CUBE] = ImageTexture(renderer, Assets::Images::ground_cube);
+    texture_map[Map::LAND_CUBE] = ImageTexture(renderer, Assets::Images::land);
     texture_map[Map::MAZE_GROUND_CUBE] = ImageTexture(renderer, Assets::Images::maze_ground_cube);
     // texture_map[Map::SNOWY_GROUND_CUBE] = ImageTexture(renderer, "resources/snowy_ground_cube.png");
     texture_map[Map::ERROR_CUBE] = ImageTexture(renderer, Assets::Images::error_cube);
@@ -121,6 +123,7 @@ Texture* choose_cube_vine_texture(std::string type, std::pair<int, int> grid_pos
 void load_player_sprite(SDL_Renderer* renderer) {
     const int sprite_width = 32;
     const int sprite_height = 31;
+    const int standing_index = 4;
 
     SDL_Rect srcRect;
     SDL_Rect dstRect = {
@@ -130,10 +133,15 @@ void load_player_sprite(SDL_Renderer* renderer) {
         static_cast<int>(player.rect.h)
     };
     int col;
-    if (player.movement_vector.x == 0 && player.movement_vector.y == 0) {
-        col = 4;  // standing index
+    if ((player.movement_vector.x == 0
+        && player.movement_vector.y == 0)
+        || player.movement_speed == 0) {
+        col = standing_index;  // standing index
+        player.animation_speed = 0;
     }
     else {
+        // todo: Tile sizeiga tuleb 2ra arvutada, kui palju peab frame updateima. tile isze== 100 ss ja speed 20 ss 5 framei per tile size?
+        std::abs(player.movement_speed) > DEFAULT_PLAYER_MOVEMENT_SPEED * 0.75 ? player.animation_speed = 123 : player.animation_speed = 250;
         col = last_frame % 4;  // loop 0-3 for frames
     }
 
@@ -148,10 +156,6 @@ void load_player_sprite(SDL_Renderer* renderer) {
     srcRect.w = sprite_width;
     srcRect.h = sprite_height;
 
-    // todo: Tile sizeiga tuleb 2ra arvutada, kui palju peab frame updateima. tile isze== 100 ss ja speed 20 ss 5 framei per tile size?
-    std::abs(player.movement_speed) > DEFAULT_PLAYER_MOVEMENT_SPEED * 0.75 ? player.animation_speed = 123 : player.animation_speed = 250;
-    // std::cout << "animation speed: " << player.animation_speed << "\n";
-
     if (SDL_GetTicks() - last_update > player.animation_speed) {
         last_frame++;
         last_update = SDL_GetTicks();
@@ -161,11 +165,11 @@ void load_player_sprite(SDL_Renderer* renderer) {
 }
 
 
-void render_void_tilemap(SDL_Renderer* renderer, struct Offset& offset, 
+void render_void_tilemap(SDL_Renderer* renderer, struct Offset& offset,
     int map[map_size][map_size], std::pair<int, int> grid_pos, SDL_Rect destTile) {
     int tex_width = 32;
     int tex_height = 31;
-    SDL_Rect srcTile = { 0, 0, tex_width, tex_height};
+    SDL_Rect srcTile = { 0, 0, tex_width, tex_height };
 
     auto [row, col] = grid_pos;
 
@@ -189,7 +193,7 @@ void render_void_tilemap(SDL_Renderer* renderer, struct Offset& offset,
             srcTile.x = 32, srcTile.y = 31;
             texture_map[Map::VOID_CUBE_NEIGHBOUR].render(renderer, &srcTile, &destTile);
         }
-        else if (map[row - 1][col] == VOID_CUBE_NEIGHBOUR 
+        else if (map[row - 1][col] == VOID_CUBE_NEIGHBOUR
             && map[row][col - 1] == VOID_CUBE_NEIGHBOUR) {
             srcTile.x = 0, srcTile.y = 0;
             texture_map[Map::VOID_CUBE_NEIGHBOUR].render(renderer, &srcTile, &destTile);
@@ -202,14 +206,13 @@ void render_void_tilemap(SDL_Renderer* renderer, struct Offset& offset,
             for (int dx = -radius; dx <= radius; ++dx) {
                 int ny = row + dy;
                 int nx = col + dx;
-
                 // Check if the (nx, ny) is within circular radius
-                if (dx*dx + dy*dy <= radius*radius) {
+                if (dx * dx + dy * dy <= radius * radius) {
                     // Bounds check
                     if (ny >= 0 && ny < map_size &&
                         nx >= 0 && nx < map_size) {
-
                         if (map[ny][nx] == Map::TREE) {
+                            random_offsets_trees.erase({ny, nx});
                             map[ny][nx] = Map::TREE_TRUNK;
                         }
                     }

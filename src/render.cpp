@@ -33,11 +33,12 @@ void RenderQueueItem::render(SDL_Renderer* renderer) {
     throw std::logic_error("texture or render function needed for rendering");
 }
 
-std::unordered_map<std::pair<int, int>, int, pair_hash> random_offsets;
+std::unordered_map<std::pair<int, int>, int, pair_hash> random_offsets_walls;
+std::unordered_map<std::pair<int, int>, int, pair_hash> random_offsets_trees;
 std::set<std::pair<int, int>> grid_vine_checked;
 
 static const std::unordered_set<int> ground_values = {
-    Map::LAND, Map::TREE, Map::GRASS_COVER, Map::TREE_TRUNK
+    Map::GROUND_CUBE, Map::TREE, Map::GRASS_COVER, Map::TREE_TRUNK
 };
 
 static const std::unordered_set<int> wall_values = {
@@ -86,8 +87,7 @@ void render_map(SDL_Renderer* renderer, struct Offset& offset, struct Player& pl
                 texture_map[Map::MAZE_GROUND_CUBE].render(renderer, &destTile);
             }
 
-            switch (grid_value)
-            {
+            switch (grid_value) {
             case Map::VOID_CUBE:
             case Map::VOID_CUBE_NEIGHBOUR: {
                 render_void_tilemap(renderer, offset, map, grid_pos, destTile);
@@ -97,15 +97,18 @@ void render_map(SDL_Renderer* renderer, struct Offset& offset, struct Player& pl
             case Map::MAZE_GROUND_CUBE:
             case Map::YELLOW_CUBE:
             case Map::ERROR_CUBE:
+            case Map::LAND_CUBE:
             case Map::BLUE_CUBE: {
                 texture_map[grid_value].render(renderer, &destTile);
                 break;
             }
             case Map::TREE_TRUNK: {
-                destTile.h = (tile_size / 2);
-                destTile.w = (tile_size / 2);
-                destTile.x += (tile_size / 5);
-                destTile.y += (tile_size / 3);
+                int xr = random_offsets_trees.try_emplace(grid_pos, rand() % 20)
+                    .first->second;
+                destTile.x += (tile_size  / 5) + xr;
+                destTile.y += (tile_size  / 3) + xr;
+                destTile.h = (tile_size  / 2) - xr;
+                destTile.w = (tile_size  / 2) - xr;
             }
             // textures above ground, 1st floor (no render_q)
             case Map::GRASS_COVER: {
@@ -113,11 +116,22 @@ void render_map(SDL_Renderer* renderer, struct Offset& offset, struct Player& pl
                 texture_map[grid_value].render(renderer, &destTile);
                 break;
             }
+            case Map::TREE: {
+                int xr = random_offsets_trees.try_emplace(grid_pos, rand() % 125)
+                    .first->second;
+                destTile.y -= half_tile - (xr / 5);
+                destTile.x += (xr / 8);
+                destTile.w -= (xr / 4);
+                destTile.h -= (xr / 4);
+                render_queue.push_back(
+                    RenderQueueItem(destTile.y, destTile, &texture_map[grid_value])
+                );
+                break;
+            }
             // textures above ground i.e .y -= half_tile
             case Map::VINE_OVERHANG_SN:
             case Map::VINE_OVERHANG_EW:
-            case Map::VINE_COVER_N:
-            case Map::TREE: {
+            case Map::VINE_COVER_N: {
                 destTile.y -= half_tile;
                 render_queue.push_back(
                     RenderQueueItem(destTile.y, destTile, &texture_map[grid_value])
@@ -159,10 +173,15 @@ void render_map(SDL_Renderer* renderer, struct Offset& offset, struct Player& pl
                 );
                 break;
             }
+            // section wall, thicker wall
             case Map::INGROWN_WALL_CUBE: {
                 destTile.y -= half_tile;
+                destTile.y -= 5;
+                destTile.x -= 5;
+                destTile.w += 5;
+                destTile.h += 5;
                 render_queue.push_back(
-                    RenderQueueItem(destTile.y, destTile, &texture_map[Map::INGROWN_WALL_CUBE])
+                    RenderQueueItem(destTile.y, destTile, &texture_map[grid_value])
                 );
                 destTile.y -= half_tile;
                 render_queue.push_back(
@@ -211,7 +230,7 @@ void render_map(SDL_Renderer* renderer, struct Offset& offset, struct Player& pl
                 grid_vine_checked.insert(grid_pos);
                 // Only generate random offset once per block
                 // see rand % number on kui palju px on maxist v2hem
-                int xr = random_offsets.try_emplace(grid_pos, rand() % 40)
+                int xr = random_offsets_walls.try_emplace(grid_pos, rand() % 40)
                     .first->second;
                 destTile.y -= half_tile - (xr / 2.5);
                 destTile.x += (xr / 4);
