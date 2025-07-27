@@ -9,12 +9,16 @@
 #include <cmath>
 
 namespace Raycast {
-    int ray_length = 100;
+    int max_ray_length = 1000;
+    int half_tile = (tile_size / 2);
+    SDL_FPoint source_pos = {};
 
+    void update_source_pos(){
+        source_pos = { player.x + player.size, player.y };
+    }
     float to_radians(float degrees) {
         return degrees * (PI / 180.0f);
     }
-
     // Computes direction vector from an angle
     SDL_FPoint angle_to_direction(float angle_deg) {
         float angle_rad = to_radians(angle_deg);
@@ -23,35 +27,57 @@ namespace Raycast {
             sinf(angle_rad)
         };
     }
-    float calculate_line_length(SDL_FPoint direction) {
-        float length;
-        SDL_FPoint starting_pos = { player.x, player.y };
+    float calculate_line_length(int map[map_size][map_size], SDL_FPoint direction) {
+        float distance = 0.0f;
+        SDL_FPoint start_pos = source_pos;
+        bool wall_found = false;
 
-        return length;
+        while (distance < max_ray_length) {
+            // fixme: optimise
+            if (wall_found == true) {
+                // distance koos half_tilega on walli sees, ehk addi v2hem distantsi
+                start_pos.x += direction.x * (angle_step);
+                start_pos.y += direction.y * (angle_step);
+            }
+            else {
+                start_pos.x += direction.x * (angle_step + half_tile);
+                start_pos.y += direction.y * (angle_step + half_tile);
+            }
+            
+            int grid_x = static_cast<int>(start_pos.x / tile_size);
+            int grid_y = static_cast<int>(start_pos.y / tile_size);
+            
+            // SDL_Rect ray_rect = {start_pos.x, start_pos.y, tile};
+            
+            if (wall_values.find(map[grid_y][grid_x]) != wall_values.end()) {
+                if (!wall_found) { wall_found = true; continue; }
+
+                if (wall_found && wall_values.find(map[grid_y][grid_x]) != wall_values.end()) {
+                    break;
+                } 
+            }
+            distance += angle_step + half_tile;
+        }
+        return distance;
     }
+    void draw(SDL_Renderer* renderer, struct Offset& offset, int map[map_size][map_size]) {
+        if (r_pressed) return;
 
-    void draw(SDL_Renderer* renderer, struct Offset& offset) {
-        // Cornflower blue rays
-        SDL_SetRenderDrawColor(renderer, 100, 149, 237, 255);
+        // update light source pos
+        update_source_pos();
+        SDL_SetRenderDrawColor(renderer, 100, 255, 255, 255);
 
-        for (int angle = 0; angle < 360; angle += step) {
-            SDL_FPoint dir = angle_to_direction(static_cast<float>(angle));
-            SDL_FPoint start = { 
-                player.x + player.size, 
-                player.y + player.size
-            };
+        for (int angle = 0; angle < 360; angle += angle_step) {
+            SDL_FPoint direction = angle_to_direction(static_cast<float>(angle));
+            float calculated_length = calculate_line_length(map, direction);
             SDL_FPoint end = {
-                start.x + dir.x * ray_length,
-                start.y + dir.y * ray_length
+                source_pos.x + direction.x * calculated_length,
+                source_pos.y + direction.y * calculated_length
             };
-
-            SDL_FPoint iso_start = to_isometric_grid_coordinate(offset, start.x / tile_size, start.y / tile_size);
-            SDL_FPoint iso_end = to_isometric_grid_coordinate(offset, end.x / tile_size, end.y / tile_size);
-            SDL_RenderDrawLineF(renderer,
-                iso_start.x,
-                iso_start.y,
-                iso_end.x  ,
-                iso_end.y  
+            SDL_FPoint iso_start = to_isometric_coordinate(offset, source_pos.x , source_pos.y );
+            SDL_FPoint iso_end = to_isometric_coordinate(offset, end.x , end.y );
+            SDL_RenderDrawLineF(
+                renderer, iso_start.x + half_tile, iso_start.y, iso_end.x + half_tile, iso_end.y
             );
         }
     }

@@ -9,6 +9,7 @@
 #include "render.hpp"
 #include "collision.hpp"
 #include "raycast.hpp"
+#include "raycast.hpp"
 
 int main(int argc, char* argv[]) {
     SDL_SetMainReady();  // compiler ja windows bitching. Yritab muidu SDL maini kasutada
@@ -25,6 +26,8 @@ int main(int argc, char* argv[]) {
     SDL_Window* window = SDL_CreateWindow("Asterion",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         1200, 720, SDL_WINDOW_SHOWN);
+
+    SDL_GetWindowSize(window, &screen_width, &screen_height);
 
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
@@ -69,16 +72,14 @@ int main(int argc, char* argv[]) {
 
             /* Render begin*/
             SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);  // Clear with blue!
-            SDL_RenderClear(renderer);  // enne uut framei, t6mba plats puhtaks
-
-            update_offset(offset, player, window);
-            update_player(map, offset, state, renderer);
-
+            SDL_RenderClear(renderer);  // enne uut framei, t6mba plats puhtaksd
+            
+            update_offset(offset, player);
             load_render(renderer, offset, player);
-
-            Raycast::draw(renderer, offset);
-            // enne millegi renderimist, peab lisama rendererile colori.
-            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+            
+            update_player(map, offset, state, renderer);
+            Raycast::draw(renderer, offset, map);
+            
             // dispay new frame
             SDL_RenderPresent(renderer);
 
